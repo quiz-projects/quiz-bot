@@ -35,7 +35,7 @@ class QuizDB:
 
     def get_option(self, question_id):
         """
-        Get a specific topics questions
+        Get a specific questions options
         """
         url = f"https://englishapi.pythonanywhere.com/api/option/{question_id}"
         response = requests.get(url)

@@ -56,7 +56,7 @@ def choose_quiz(update:Update, context:CallbackContext) -> None:
     for q in quiz_list:
         quiz_id = q.get('id')
         title = q.get('title')
-        callback_data = f"{title}_{quiz_id}"
+        callback_data = f"topics_{title}_{quiz_id}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
@@ -66,3 +66,47 @@ def choose_quiz(update:Update, context:CallbackContext) -> None:
     query.answer("Waiting!")
     query.edit_message_text("Choose the quiz",reply_markup=reply_markup)
     
+def get_topics(update:Update, context:CallbackContext) -> None:
+    #Get user id
+    user_id = update.callback_query.from_user.id
+    #Get callback data
+    query = update.callback_query
+    data = query.data
+    quiz_id = int(data.split('_')[-1])
+    topic_list = quiz.get_topic(quiz_id)
+
+    buttons = []
+    for t in topic_list:
+        topic_id = t.get('id')
+        title = t.get('title')
+        callback_data = f"questions_{title}_{quiz_id}"
+        button = InlineKeyboardButton(
+            text=title,
+            callback_data=callback_data
+        )
+        buttons.append(button)
+    reply_markup = InlineKeyboardMarkup([buttons])
+    query.answer("Waiting!")
+    query.edit_message_text("Choose the topic",reply_markup=reply_markup)
+
+#Generate option keyboard
+def get_keyboard():
+    """
+    Sends a message with three inline buttons attached
+    """
+    keyboard = [
+        [  InlineKeyboardButton(" A ", callback_data='A'),    InlineKeyboardButton(" B ", callback_data='B')],
+        [  InlineKeyboardButton(" C ", callback_data='C'),    InlineKeyboardButton(" D ", callback_data='D')]
+        ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+
+def question(update:Update, context:CallbackContext) -> None:
+    #Get user id
+    user_id = update.callback_query.from_user.id
+    #Get callback data
+    query = update.callback_query
+    data = query.data
+    topic_id = int(data.split('_')[-1])
+    question_list = quiz.get_question(topic_id)

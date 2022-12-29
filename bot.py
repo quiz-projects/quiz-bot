@@ -10,7 +10,8 @@ from telegram.ext import (
 )
 from handlers import (
     start,
-    choose_quiz
+    choose_quiz,
+    get_topics
 )
 import os
 TOKEN = os.environ['TOKEN']
@@ -26,6 +27,7 @@ def main() -> None:
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CallbackQueryHandler(choose_quiz, pattern='start_quiz'))
+    dp.add_handler(CallbackQueryHandler(get_topics, pattern='topics'))
     # Start the Bot
     updater.start_polling()
     updater.idle()

@@ -61,8 +61,8 @@ def choose_quiz(update:Update, context:CallbackContext) -> None:
             text=title,
             callback_data=callback_data
         )
-        buttons.append(button)
-    reply_markup = InlineKeyboardMarkup([buttons])
+        buttons.append([button])
+    reply_markup = InlineKeyboardMarkup(buttons)
     query.answer("Waiting!")
     query.edit_message_text("Choose the quiz",reply_markup=reply_markup)
     
@@ -84,8 +84,8 @@ def get_topics(update:Update, context:CallbackContext) -> None:
             text=title,
             callback_data=callback_data
         )
-        buttons.append(button)
-    reply_markup = InlineKeyboardMarkup([buttons])
+        buttons.append([button])
+    reply_markup = InlineKeyboardMarkup(buttons)
     query.answer("Waiting!")
     query.edit_message_text("Choose the topic",reply_markup=reply_markup)
 
@@ -110,3 +110,5 @@ def question(update:Update, context:CallbackContext) -> None:
     data = query.data
     topic_id = int(data.split('_')[-1])
     question_list = quiz.get_question(topic_id)
+
+    NUMBER_OF_QUESTIONS = len(question_list)

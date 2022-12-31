@@ -22,7 +22,8 @@ from telegram.ext import (
 )
 from quizapi import QuizDB
 #Create database object
-quiz = QuizDB()
+url = 'https://englishapi.pythonanywhere.com'
+quiz = QuizDB(url)
 #Start handler
 def start(update:Update, context:CallbackContext) -> None:
     #Add user to database
@@ -102,6 +103,10 @@ def get_keyboard():
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
+def get_option(question_id):
+    option = quiz.get_option(question_id)
+    return option
+
 def question(update:Update, context:CallbackContext) -> None:
     #Get user id
     user_id = update.callback_query.from_user.id
@@ -112,3 +117,12 @@ def question(update:Update, context:CallbackContext) -> None:
     question_list = quiz.get_question(topic_id)
 
     NUMBER_OF_QUESTIONS = len(question_list)
+    first_question = question_list[0]
+    option = get_option(first_question['id'])
+    img = first_question['img']
+    title = first_question['title']
+
+    query.message.reply_photo(
+        photo=img, 
+        caption=title,
+        reply_markup=get_keyboard())

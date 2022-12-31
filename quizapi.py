@@ -38,6 +38,6 @@ class QuizDB:
         """
         Get a specific questions options
         """
-        url = f"{self.base_url}m/api/option/{question_id}"
+        url = f"{self.base_url}/api/option/{question_id}"
         response = requests.get(url)
         return response.json()

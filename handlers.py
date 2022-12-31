@@ -22,7 +22,8 @@ from telegram.ext import (
 )
 from quizapi import QuizDB
 #Create database object
-quiz = QuizDB()
+url = 'https://englishapi.pythonanywhere.com'
+quiz = QuizDB(url)
 #Start handler
 def start(update:Update, context:CallbackContext) -> None:
     #Add user to database

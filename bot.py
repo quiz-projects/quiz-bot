@@ -13,7 +13,9 @@ from handlers import (
     choose_quiz,
     get_topics,
     question,
-    border
+    border,
+    add_option,
+    statistics
 )
 import os
 TOKEN = os.environ['TOKEN']
@@ -32,6 +34,10 @@ def main() -> None:
     dp.add_handler(CallbackQueryHandler(get_topics, pattern='topics'))
     dp.add_handler(CallbackQueryHandler(border, pattern='border'))
     dp.add_handler(CallbackQueryHandler(question, pattern='questions'))
+    dp.add_handler(CallbackQueryHandler(add_option, pattern='option'))
+    dp.add_handler(CallbackQueryHandler(statistics, pattern='yes'))
+    dp.add_handler(CallbackQueryHandler(choose_quiz, pattern='no'))
+
     # Start the Bot
     updater.start_polling()
     updater.idle()

@@ -74,10 +74,10 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     query = update.callback_query
     data = query.data
     quiz_id = int(data.split('_')[-1])
-    topic_list = quiz.get_topic(quiz_id)
+    quiz_data = quiz.get_topic(quiz_id)
 
     buttons = []
-    for t in topic_list:
+    for t in quiz_data['quiz']['topics']:
         topic_id = t.get('id')
         title = t.get('title')
         callback_data = f"questions_{title}_{quiz_id}"
@@ -90,23 +90,6 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     query.answer("Waiting!")
     query.edit_message_text("Choose the topic",reply_markup=reply_markup)
 
-#Generate option keyboard
-def get_keyboard():
-    """
-    Sends a message with three inline buttons attached
-    """
-    keyboard = [
-        [  InlineKeyboardButton(" A ", callback_data='A'),    InlineKeyboardButton(" B ", callback_data='B')],
-        [  InlineKeyboardButton(" C ", callback_data='C'),    InlineKeyboardButton(" D ", callback_data='D')]
-        ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    return reply_markup
-
-def get_option(question_id):
-    option = quiz.get_option(question_id)
-    return option
-
 def question(update:Update, context:CallbackContext) -> None:
     #Get user id
     user_id = update.callback_query.from_user.id
@@ -116,13 +99,5 @@ def question(update:Update, context:CallbackContext) -> None:
     topic_id = int(data.split('_')[-1])
     question_list = quiz.get_question(topic_id)
 
-    NUMBER_OF_QUESTIONS = len(question_list)
-    first_question = question_list[0]
-    option = get_option(first_question['id'])
-    img = first_question['img']
-    title = first_question['title']
-
-    query.message.reply_photo(
-        photo=img, 
-        caption=title,
-        reply_markup=get_keyboard())
+    print(question_list)
+    

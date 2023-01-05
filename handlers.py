@@ -188,13 +188,12 @@ def next_question(update:Update, context:CallbackContext, topic_id:int, result_i
             quiz.update_student(questions, user_data['id'])
         
     else:
-        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}{user_id}')
+        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}')
         b2 = InlineKeyboardButton("No", callback_data='⬅️Back')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'This is topic finished.\n✅Want to see the test results?',reply_markup=reply_markup)
 
 def add_option(update:Update, context:CallbackContext) -> None:
-    # option_{question_id}_{option_id}_{result_id}_{topic_id}"
     query = update.callback_query 
     data = query.data.split('_')  
     question_id = int(data[1])
@@ -215,8 +214,8 @@ def add_option(update:Update, context:CallbackContext) -> None:
         query.answer(
             "Wrong answer ❌")
     if result_option["is_correct"] == True:
-        query.answer(
-            "Correct ✅")
+        query.answer("Correct ✅")
+        quiz.now_answer += 1
     next_question(update, context, topic_id, result_id, query.message.chat.id)
 
 def statistics(update:Update, context:CallbackContext):
@@ -225,7 +224,8 @@ def statistics(update:Update, context:CallbackContext):
     student_id = data[-1]
     topic_id = data[-2]
     student_result = quiz.get_result(student_id, topic_id)
-    text = f"✅ to'g'ri javoblar soni:\nShu mavzu bo'yicha umumiy to'g'rijavoblar\nsoni : " + str(student_result['student']["results"][0]["score"])
+    text = f"✅ to'g'ri javoblar soni:{quiz.now_answer}\nShu mavzu bo'yicha umumiy to'g'rijavoblar\nsoni : " + str(student_result['student']["results"][0]["score"])
     query.edit_message_text(text, reply_markup=None)
+    now_answer = 0
 
 

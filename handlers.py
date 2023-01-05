@@ -80,7 +80,7 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     for t in quiz_data['quiz']['topics']:
         topic_id = t.get('id')
         title = t.get('title')
-        callback_data = f"questions_{title}_{quiz_id}"
+        callback_data = f"border_{title}_{quiz_id}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
@@ -90,14 +90,26 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     query.answer("Waiting!")
     query.edit_message_text("Choose the topic",reply_markup=reply_markup)
 
+def border(update:Update, context:CallbackContext):
+        quer = update.callback_query
+        data =quer.data.split('_')
+        topic_id = data[-1]
+        reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton('5', callback_data=f'questions_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{topic_id}_10')],
+            [InlineKeyboardButton('15', callback_data=f'questions_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{topic_id}_20')],
+            [InlineKeyboardButton('25', callback_data=f'questions_{topic_id}_25'), InlineKeyboardButton('30', callback_data=f'questions_{topic_id}_30')],
+            [InlineKeyboardButton('40', callback_data=f'questions_{topic_id}_40'), InlineKeyboardButton('50', callback_data=f'questions_{topic_id}_50')]
+            ])
+        quer.edit_message_text("How many test do you want to solve?", reply_markup=reply_markup)
+
 def question(update:Update, context:CallbackContext) -> None:
     #Get user id
     user_id = update.callback_query.from_user.id
     #Get callback data
     query = update.callback_query
-    data = query.data
-    topic_id = int(data.split('_')[-1])
-    question_list = quiz.get_question(topic_id)
+    data = query.data.split('_')
+    numpber_of_question = int(data[-1])
+    topic_id = int(data[-2])
 
-    print(question_list)
+    print(topic_id, numpber_of_question)
     

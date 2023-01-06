@@ -4,8 +4,6 @@ class QuizDB:
     """
     QuizDB is a class that contains all the questions and answers.
     """
-    now_answer = 0
-    current_question = 0
     def __init__(self, base_url):
         """
         Initialize the QuizDB class.
@@ -61,6 +59,11 @@ class QuizDB:
     def get_result(self,student_id, topic_id):
         url = f"{self.base_url}/api/result/{student_id}/{topic_id}"
         r = requests.get(url)
+        return r.json()
+
+    def update_result(self, result_id, data:dict):
+        url = f'{self.base_url}/api/update_result/{result_id}'
+        r = requests.post(url, json=data)
         return r.json()
 
     def add_result_detail(self, data):

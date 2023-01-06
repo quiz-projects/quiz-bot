@@ -85,7 +85,7 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     for t in quiz_data['quiz']['topic']:
         topic_id = t.get('id')
         title = t.get('title')
-        callback_data = f"border_{title}_{quiz_id}"
+        callback_data = f"border_{title}_{topic_id}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
@@ -120,9 +120,10 @@ def question(update:Update, context:CallbackContext) -> None:
     
     data = {"student": user_id, "topic": topic_id, "score": 0}
     result_data = quiz.add_result(data)
-    
     result_id = result_data['id']
     question = quiz.get_question(topic_id)
+
+    quiz.update_result(result_id, {"current_question_number":numpber_of_question})
 
     questions = question['quiz']['topic']["question"]
     idx = list(range(len(questions)))
@@ -152,7 +153,7 @@ def question(update:Update, context:CallbackContext) -> None:
             question_list.pop(0)
             quiz.update_student(question_list, user_id)
     else:
-        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}')
+        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
         b2 = InlineKeyboardButton("No", callback_data='no')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'This is topic finished.\n✅Want to see the test results?',reply_markup=reply_markup)
@@ -186,7 +187,7 @@ def next_question(update:Update, context:CallbackContext, topic_id:int, result_i
             quiz.update_student(questions, user_data['id'])
         
     else:
-        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}')
+        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
         b2 = InlineKeyboardButton("No", callback_data='no')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'This is topic finished✅\nWant to see the test results?',reply_markup=reply_markup)
@@ -198,6 +199,7 @@ def add_option(update:Update, context:CallbackContext) -> None:
     option_id = int(data[2])
     result_id = int(data[3])
     topic_id = int(data[4])
+    student_id = int(quiz.get_student(query.message.chat.id)['id'])
     data_json = {
         "result":result_id, 
         "question":question_id, 
@@ -212,20 +214,29 @@ def add_option(update:Update, context:CallbackContext) -> None:
         query.edit_message_caption('Wrong answer ❌', reply_markup=None)
 
     if result_option["is_correct"] == True:
+        get_result_data = quiz.get_result(student_id, topic_id)
+        current_question_result = int(get_result_data['student']["results"][0]["current_question_result"]) + 1
+        quiz.update_result(result_id, {"current_question_result":current_question_result})
         query.answer("Correct ✅")
         query.edit_message_caption('Correct ✅', reply_markup=None)
-        quiz.now_answer += 1
     next_question(update, context, topic_id, result_id, query.message.chat.id)
 
 def statistics(update:Update, context:CallbackContext):
     query = update.callback_query
     data = query.data.split('_')
-    student_id = data[-1]
-    topic_id = data[-2]
+    student_id = data[-2]
+    topic_id = data[-3]
+    result_id = data[-1]
     student_result = quiz.get_result(student_id, topic_id)
 
-    text = f"Number of answers: {quiz.now_answer}/{quiz.current_question}\nTotal number of correct answers by topic: " + str(student_result['student']["results"][0]["score"])
+    now_answer = student_result["student"]["results"][0]["current_question_result"]
+    current_question = student_result["student"]["results"][0]["current_question_number"]
+
+    text = f"Number of answers: {now_answer}/{current_question}\nTotal number of correct answers by topic: " + str(student_result['student']["results"][0]["score"])
     query.edit_message_text(text, reply_markup=None)
-    quiz.now_answer = 0
+    quiz.update_result(result_id, {
+        "current_question_number":0,
+        "current_question_result":0
+        })
 
 

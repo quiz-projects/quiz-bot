@@ -155,7 +155,7 @@ def question(update:Update, context:CallbackContext) -> None:
             quiz.update_student(question_list, user_id)
     else:
         b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}')
-        b2 = InlineKeyboardButton("No", callback_data='⬅️Back')
+        b2 = InlineKeyboardButton("No", callback_data='no')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'This is topic finished.\n✅Want to see the test results?',reply_markup=reply_markup)
 
@@ -189,7 +189,7 @@ def next_question(update:Update, context:CallbackContext, topic_id:int, result_i
         
     else:
         b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}')
-        b2 = InlineKeyboardButton("No", callback_data='⬅️Back')
+        b2 = InlineKeyboardButton("No", callback_data='no')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'This is topic finished.\n✅Want to see the test results?',reply_markup=reply_markup)
 

@@ -8,6 +8,7 @@ from telegram import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
+    InputMediaPhoto
 )
 
 from telegram.ext import (
@@ -147,6 +148,7 @@ def question(update:Update, context:CallbackContext) -> None:
                 
         reply_markup = InlineKeyboardMarkup(keyboard)
         text = question['quiz']['topic']['question'][question_list[0]]["title"]
+        query.edit_message_text("Savollarni yechishni boshlang!")
         bot.sendPhoto(telegram_id ,img, text, reply_markup = reply_markup)
 
         if len(question_list) > 0:

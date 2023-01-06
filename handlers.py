@@ -101,10 +101,7 @@ def border(update:Update, context:CallbackContext):
         topic_id = data[-1]
         reply_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton('5', callback_data=f'questions_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{topic_id}_10')],
-            [InlineKeyboardButton('15', callback_data=f'questions_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{topic_id}_20')],
-            [InlineKeyboardButton('25', callback_data=f'questions_{topic_id}_25'), InlineKeyboardButton('30', callback_data=f'questions_{topic_id}_30')],
-            [InlineKeyboardButton('40', callback_data=f'questions_{topic_id}_40'), InlineKeyboardButton('50', callback_data=f'questions_{topic_id}_50')]
-            ])
+            [InlineKeyboardButton('15', callback_data=f'questions_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{topic_id}_20')]])
         quer.edit_message_text("How many test do you want to solve?", reply_markup=reply_markup)
 
 def question(update:Update, context:CallbackContext) -> None:

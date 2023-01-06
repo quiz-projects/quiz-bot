@@ -42,12 +42,12 @@ def start(update:Update, context:CallbackContext) -> None:
     quiz.add_student(user_data)
 
     button = InlineKeyboardButton(
-        text = "Start Quiz!", 
+        text = "Testni boshlash!", 
         callback_data='start_quiz'
         )
     reply_markup = InlineKeyboardMarkup([[button]])
     # Send message to user
-    text ='Welcome to Quiz Bot!\n\nClick the button below to take the quiz!'
+    text ='codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi tugmani bosing!'
     update.message.reply_text(f'{text}',reply_markup=reply_markup)
 
 def choose_quiz(update:Update, context:CallbackContext) -> None:
@@ -68,8 +68,8 @@ def choose_quiz(update:Update, context:CallbackContext) -> None:
         )
         buttons.append([button])
     reply_markup = InlineKeyboardMarkup(buttons)
-    query.answer("Waiting!")
-    query.edit_message_text("Choose the quiz",reply_markup=reply_markup)
+    query.answer("Kuting!")
+    query.edit_message_text("Test yechish uchun modulni tanlang!",reply_markup=reply_markup)
     
 def get_topics(update:Update, context:CallbackContext) -> None:
     #Get user id
@@ -92,8 +92,8 @@ def get_topics(update:Update, context:CallbackContext) -> None:
         )
         buttons.append([button])
     reply_markup = InlineKeyboardMarkup(buttons)
-    query.answer("Waiting!")
-    query.edit_message_text("Choose the topic",reply_markup=reply_markup)
+    query.answer("Kuting!")
+    query.edit_message_text("Test yechish uchun mavzu tanlang!",reply_markup=reply_markup)
 
 def border(update:Update, context:CallbackContext):
         quer = update.callback_query
@@ -102,7 +102,7 @@ def border(update:Update, context:CallbackContext):
         reply_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton('5', callback_data=f'questions_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{topic_id}_10')],
             [InlineKeyboardButton('15', callback_data=f'questions_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{topic_id}_20')]])
-        quer.edit_message_text("How many test do you want to solve?", reply_markup=reply_markup)
+        quer.edit_message_text("Nechta test yechishni hohlaysiz?", reply_markup=reply_markup)
 
 def question(update:Update, context:CallbackContext) -> None:
     #Get user id
@@ -156,7 +156,7 @@ def question(update:Update, context:CallbackContext) -> None:
         b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
         b2 = InlineKeyboardButton("No", callback_data='no')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
-        bot.sendMessage(telegram_id,'This is topic finished.\n✅Want to see the test results?',reply_markup=reply_markup)
+        bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz.\n✅Natijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
 
 def next_question(update:Update, context:CallbackContext, topic_id:int, result_id:int, chat_id:int) -> None:
     telegram_id = update.callback_query.from_user.id
@@ -187,10 +187,10 @@ def next_question(update:Update, context:CallbackContext, topic_id:int, result_i
             quiz.update_student(questions, user_data['id'])
         
     else:
-        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
-        b2 = InlineKeyboardButton("No", callback_data='no')
+        b1 = InlineKeyboardButton('Ha', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
+        b2 = InlineKeyboardButton("Yoq", callback_data='no')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
-        bot.sendMessage(telegram_id,'This is topic finished✅\nWant to see the test results?',reply_markup=reply_markup)
+        bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz✅\nNatijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
 
 def add_option(update:Update, context:CallbackContext) -> None:
     query = update.callback_query 
@@ -210,15 +210,15 @@ def add_option(update:Update, context:CallbackContext) -> None:
     result_option = quiz.result_detail(option_id)
 
     if result_option["is_correct"] == False:
-        query.answer("Wrong answer ❌")
-        query.edit_message_caption('Wrong answer ❌', reply_markup=None)
+        query.answer("Noto'g'ri javob berdingiz ❌")
+        query.edit_message_caption('Noto\'g\'ri javob berdingiz ❌', reply_markup=None)
 
     if result_option["is_correct"] == True:
         get_result_data = quiz.get_result(student_id, topic_id)
         current_question_result = int(get_result_data['student']["results"][0]["current_question_result"]) + 1
         quiz.update_result(result_id, {"current_question_result":current_question_result})
-        query.answer("Correct ✅")
-        query.edit_message_caption('Correct ✅', reply_markup=None)
+        query.answer("To'g'ri javob berdingiz ✅")
+        query.edit_message_caption('To\'g\'ri javob berdingiz ✅', reply_markup=None)
     next_question(update, context, topic_id, result_id, query.message.chat.id)
 
 def statistics(update:Update, context:CallbackContext):
@@ -232,7 +232,7 @@ def statistics(update:Update, context:CallbackContext):
     now_answer = student_result["student"]["results"][0]["current_question_result"]
     current_question = student_result["student"]["results"][0]["current_question_number"]
 
-    text = f"Number of answers: {now_answer}/{current_question}\nTotal number of correct answers by topic: " + str(student_result['student']["results"][0]["score"])
+    text = f"Umumiy savollar soni: {current_question}\nTo'g'ri javoblar soni: {now_answer}\nMavzu bo'yicha umimiy to'g'ri javoblar soni: " + str(student_result['student']["results"][0]["score"])
     query.edit_message_text(text, reply_markup=None)
     quiz.update_result(result_id, {
         "current_question_number":0,

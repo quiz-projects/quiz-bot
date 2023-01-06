@@ -115,6 +115,7 @@ def question(update:Update, context:CallbackContext) -> None:
     query = update.callback_query
     data = query.data.split('_')
     numpber_of_question = int(data[-1])
+    quiz.current_question = numpber_of_question
     topic_id = int(data[-2])
     
     random_list = []
@@ -191,7 +192,7 @@ def next_question(update:Update, context:CallbackContext, topic_id:int, result_i
         b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}')
         b2 = InlineKeyboardButton("No", callback_data='no')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
-        bot.sendMessage(telegram_id,'This is topic finished.\n✅Want to see the test results?',reply_markup=reply_markup)
+        bot.sendMessage(telegram_id,'This is topic finished✅\nWant to see the test results?',reply_markup=reply_markup)
 
 def add_option(update:Update, context:CallbackContext) -> None:
     query = update.callback_query 
@@ -209,12 +210,13 @@ def add_option(update:Update, context:CallbackContext) -> None:
 
     result_option = quiz.result_detail(option_id)
 
-    query.edit_message_caption('Accepted', reply_markup=None)
     if result_option["is_correct"] == False:
-        query.answer(
-            "Wrong answer ❌")
+        query.answer("Wrong answer ❌")
+        query.edit_message_caption('Wrong answer ❌', reply_markup=None)
+
     if result_option["is_correct"] == True:
         query.answer("Correct ✅")
+        query.edit_message_caption('Correct ✅', reply_markup=None)
         quiz.now_answer += 1
     next_question(update, context, topic_id, result_id, query.message.chat.id)
 
@@ -224,8 +226,9 @@ def statistics(update:Update, context:CallbackContext):
     student_id = data[-1]
     topic_id = data[-2]
     student_result = quiz.get_result(student_id, topic_id)
-    text = f"✅ to'g'ri javoblar soni:{quiz.now_answer}\nShu mavzu bo'yicha umumiy to'g'rijavoblar\nsoni : " + str(student_result['student']["results"][0]["score"])
+
+    text = f"Number of answers: {quiz.now_answer}/{quiz.current_question}\nTotal number of correct answers by topic: " + str(student_result['student']["results"][0]["score"])
     query.edit_message_text(text, reply_markup=None)
-    now_answer = 0
+    quiz.now_answer = 0
 
 

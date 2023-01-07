@@ -85,7 +85,7 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     for t in quiz_data['quiz']['topic']:
         topic_id = t.get('id')
         title = t.get('title')
-        callback_data = f"border_{title}_{topic_id}"
+        callback_data = f"completion_{title}_{topic_id}_{quiz_id}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
@@ -94,6 +94,85 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     reply_markup = InlineKeyboardMarkup(buttons)
     query.answer("Waiting!")
     query.edit_message_text("Choose the topic",reply_markup=reply_markup)
+
+def completion(update:Update, context:CallbackContext):
+    quer = update.callback_query
+    data = quer.data.split('_')
+    topic_id = int(data[-2])
+    quiz_id = int(data[-1])
+    chat_id = quer.message.chat.id
+
+    user_data = quiz.get_student(chat_id)
+    user_id = user_data['id']
+    quiz_data = quiz.get_topic(quiz_id)
+
+
+    for i in quiz_data["quiz"]["topic"]:
+        if i["id"] == topic_id:
+            topic_index = quiz_data['quiz']['topic'].index(i)
+
+    if topic_index != 0:
+        previous = quiz_data["quiz"]["topic"][topic_index-1]
+        topic_id = previous['id']
+
+        get_result_data = quiz.get_result(user_id, topic_id)
+        question_data = quiz.get_question(topic_id)
+
+        user_score = get_result_data['student']['results'][0]['score']
+        question_len = len(question_data['quiz']['topic']["question"])
+
+        if int((question_len*60)/100) <= user_score:
+            buttons = []
+
+            for t in quiz_data['quiz']['topic']:
+                topic_id = t.get('id')
+                title = t.get('title')
+                callback_data = f"border_{title}_{topic_id}"
+                button = InlineKeyboardButton(
+                    text=title,
+                    callback_data=callback_data
+                )
+                buttons.append([button])
+                reply_markup = InlineKeyboardMarkup(buttons)
+                quer.answer("Waiting!")
+                quer.edit_message_text("Choose the topic",reply_markup=reply_markup)
+        else:
+            buttons = []
+
+            t = quiz_data['quiz']['topic'][topic_index - 1]
+
+            topic_id = t.get('id')
+            title = t.get('title')
+            callback_data = f"border_{title}_{topic_id}"
+            button = InlineKeyboardButton(
+                text=title,
+                callback_data=callback_data
+            )
+            buttons.append([button])
+            reply_markup = InlineKeyboardMarkup(buttons)
+            quer.answer("Waiting!")
+            quer.edit_message_text(
+                "sizning bodingi mavzuni qaytaishlashingiz kerak\n\
+                chunku u mavzudan 60% i dan ortiq bol olishingiz kerak",
+                reply_markup=reply_markup)
+
+    else:
+        buttons = []
+
+        for t in quiz_data['quiz']['topic']:
+            topic_id = t.get('id')
+            title = t.get('title')
+            callback_data = f"border_{title}_{topic_id}"
+            button = InlineKeyboardButton(
+                text=title,
+                callback_data=callback_data
+            )
+            buttons.append([button])
+        reply_markup = InlineKeyboardMarkup(buttons)
+        quer.answer("Waiting!")
+        quer.edit_message_text("Choose the topic",reply_markup=reply_markup)
+
+
 
 def border(update:Update, context:CallbackContext):
         quer = update.callback_query

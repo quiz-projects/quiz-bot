@@ -9,7 +9,6 @@ __pycache__/
 
 # C extensions
 *.so
-
 # Distribution / packaging
 .Python
 build/
@@ -198,5 +197,5 @@ pip-selfcheck.json
 # Ignore all local history of files
 .history
 .ionide
-
+set_token.sh
 # End of https://www.toptal.com/developers/gitignore/api/venv,python,visualstudiocode

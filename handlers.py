@@ -156,7 +156,7 @@ def question(update:Update, context:CallbackContext) -> None:
             quiz.update_student(question_list, user_id)
     else:
         b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
-        b2 = InlineKeyboardButton("No", callback_data='no')
+        b2 = InlineKeyboardButton("No", callback_data=f'no_{topic_id}_{user_id}_{result_id}')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz.\n✅Natijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
 
@@ -190,7 +190,7 @@ def next_question(update:Update, context:CallbackContext, topic_id:int, result_i
         
     else:
         b1 = InlineKeyboardButton('Ha', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
-        b2 = InlineKeyboardButton("Yoq", callback_data='no')
+        b2 = InlineKeyboardButton("Yoq", callback_data=f'no_{topic_id}_{user_id}_{result_id}')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz✅\nNatijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
 

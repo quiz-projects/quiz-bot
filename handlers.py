@@ -34,11 +34,10 @@ def start(update:Update, context:CallbackContext) -> None:
     bot = context.bot
     user = update.message.from_user
     user_id = update.message.chat.id
-    chat = "@FullStackDevelopmen1"
+    chat = "@codeschoolQuiz"
     data = bot.get_chat_member(chat, user_id)
     status = data["status"]
-    
-    print(status)
+
     if status == "creator" or status == "member":
         #Create user data
         user_data = {
@@ -58,8 +57,14 @@ def start(update:Update, context:CallbackContext) -> None:
         text ='codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi tugmani bosing!'
         update.message.reply_text(f'{text}',reply_markup=reply_markup)
     else:
-        text =f'codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi kanalga azobo\'lishingiz kerak {chat}'
-        update.message.reply_text(text,reply_markup=None)
+        cation =f'codeschoolQuizbot ga xush kelibsiz!\n\nBotdan foydalanish uchun quyidagi kanalga a\'zo bo\'lishingiz kerak!'
+        
+        button = InlineKeyboardButton(
+            text="a'zo bo'lish",
+            url='t.me/codeschoolQuiz'
+            )
+        reply_markup = InlineKeyboardMarkup([[button]])
+        update.message.reply_text(cation,reply_markup=reply_markup)
 
 
 def choose_quiz(update:Update, context:CallbackContext) -> None:

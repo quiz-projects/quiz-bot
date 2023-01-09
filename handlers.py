@@ -57,6 +57,15 @@ def choose_quiz(update:Update, context:CallbackContext) -> None:
     #Get callback data
     query = update.callback_query
     # Get all quiz
+    data = query.data.split("_")
+
+    if len(data) > 2:
+        result_id = data[3]
+        quiz.update_result(result_id, {
+            "current_question_number":0,
+            "current_question_result":0
+            })
+
     quiz_list = quiz.get_quiz()
     buttons = []
     for q in quiz_list:
@@ -86,7 +95,7 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     for t in quiz_data['quiz']['topic']:
         topic_id = t.get('id')
         title = t.get('title')
-        callback_data = f"completion_{title}_{topic_id}_{quiz_id}"
+        callback_data = f"border_{title}_{topic_id}_{quiz_id}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
@@ -96,89 +105,10 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     query.answer("Kuting!")
     query.edit_message_text("Test yechish uchun mavzu tanlang!",reply_markup=reply_markup)
 
-def completion(update:Update, context:CallbackContext):
-    quer = update.callback_query
-    data = quer.data.split('_')
-    topic_id = int(data[-2])
-    quiz_id = int(data[-1])
-    chat_id = quer.message.chat.id
-
-    user_data = quiz.get_student(chat_id)
-    user_id = user_data['id']
-    quiz_data = quiz.get_topic(quiz_id)
-
-
-    for i in quiz_data["quiz"]["topic"]:
-        if i["id"] == topic_id:
-            topic_index = quiz_data['quiz']['topic'].index(i)
-
-    if topic_index != 0:
-        previous = quiz_data["quiz"]["topic"][topic_index-1]
-        topic_id = previous['id']
-
-        get_result_data = quiz.get_result(user_id, topic_id)
-        question_data = quiz.get_question(topic_id)
-
-        user_score = get_result_data['student']['results'][0]['score']
-        question_len = len(question_data['quiz']['topic']["question"])
-
-        if int((question_len*60)/100) <= user_score:
-            buttons = []
-
-            for t in quiz_data['quiz']['topic']:
-                topic_id = t.get('id')
-                title = t.get('title')
-                callback_data = f"border_{title}_{topic_id}"
-                button = InlineKeyboardButton(
-                    text=title,
-                    callback_data=callback_data
-                )
-                buttons.append([button])
-                reply_markup = InlineKeyboardMarkup(buttons)
-                quer.answer("Waiting!")
-                quer.edit_message_text("Choose the topic",reply_markup=reply_markup)
-        else:
-            buttons = []
-
-            t = quiz_data['quiz']['topic'][topic_index - 1]
-
-            topic_id = t.get('id')
-            title = t.get('title')
-            callback_data = f"border_{title}_{topic_id}"
-            button = InlineKeyboardButton(
-                text=title,
-                callback_data=callback_data
-            )
-            buttons.append([button])
-            reply_markup = InlineKeyboardMarkup(buttons)
-            quer.answer("Waiting!")
-            quer.edit_message_text(
-                "sizning bodingi mavzuni qaytaishlashingiz kerak\n\
-                chunku u mavzudan 60% i dan ortiq bol olishingiz kerak",
-                reply_markup=reply_markup)
-
-    else:
-        buttons = []
-
-        for t in quiz_data['quiz']['topic']:
-            topic_id = t.get('id')
-            title = t.get('title')
-            callback_data = f"border_{title}_{topic_id}"
-            button = InlineKeyboardButton(
-                text=title,
-                callback_data=callback_data
-            )
-            buttons.append([button])
-        reply_markup = InlineKeyboardMarkup(buttons)
-        quer.answer("Waiting!")
-        quer.edit_message_text("Choose the topic",reply_markup=reply_markup)
-
-
-
 def border(update:Update, context:CallbackContext):
         quer = update.callback_query
         data =quer.data.split('_')
-        topic_id = data[-1]
+        topic_id = data[-2]
         reply_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton('5', callback_data=f'questions_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{topic_id}_10')],
             [InlineKeyboardButton('15', callback_data=f'questions_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{topic_id}_20')]])
@@ -235,7 +165,7 @@ def question(update:Update, context:CallbackContext) -> None:
             quiz.update_student(question_list, user_id)
     else:
         b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
-        b2 = InlineKeyboardButton("No", callback_data='no')
+        b2 = InlineKeyboardButton("No", callback_data=f'no_{topic_id}_{user_id}_{result_id}')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz.\n✅Natijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
 
@@ -269,7 +199,7 @@ def next_question(update:Update, context:CallbackContext, topic_id:int, result_i
         
     else:
         b1 = InlineKeyboardButton('Ha', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
-        b2 = InlineKeyboardButton("Yoq", callback_data='no')
+        b2 = InlineKeyboardButton("Yoq", callback_data=f'no_{topic_id}_{user_id}_{result_id}')
         reply_markup = InlineKeyboardMarkup([[b1, b2]])
         bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz✅\nNatijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
 

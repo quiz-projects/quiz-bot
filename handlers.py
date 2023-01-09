@@ -28,13 +28,13 @@ import requests
 #Create database object
 url = 'https://englishapi.pythonanywhere.com'
 quiz = QuizDB(url)
+chat = "@codeschoolQuiz"
 #Start handler
 def start(update:Update, context:CallbackContext) -> None:
     #Add user to database
     bot = context.bot
     user = update.message.from_user
     user_id = update.message.chat.id
-    chat = "@codeschoolQuiz"
     data = bot.get_chat_member(chat, user_id)
     status = data["status"]
 
@@ -93,35 +93,47 @@ def begin_quiz(update:Update, context:CallbackContext)->None:
         query.edit_message_text(text)
 
 def choose_quiz(update:Update, context:CallbackContext) -> None:
-    #Get user id
-    user_id = update.callback_query.from_user.id
-    #Get callback data
     query = update.callback_query
-    # Get all quiz
-    data = query.data.split("_")
+    user_id = query.message.chat.id
+    bot = context.bot
+    data = bot.get_chat_member(chat, user_id)
+    status = data["status"]
 
-    if len(data) > 2:
-        result_id = data[3]
-        quiz.update_result(result_id, {
-            "current_question_number":0,
-            "current_question_result":0
-            })
+    if status == "creator" or status == "member":
+        #Get user id
+        user_id = update.callback_query.from_user.id
+        #Get callback data
+        query = update.callback_query
+        # Get all quiz
+        data = query.data.split("_")
 
-    quiz_list = quiz.get_quiz()
-    buttons = []
-    for q in quiz_list:
-        quiz_id = q.get('id')
-        title = q.get('title')
-        callback_data = f"topics_{title}_{quiz_id}"
-        button = InlineKeyboardButton(
-            text=title,
-            callback_data=callback_data
-        )
-        buttons.append([button])
-    reply_markup = InlineKeyboardMarkup(buttons)
-    query.answer("Kuting!")
-    query.edit_message_text("Test yechish uchun modulni tanlang!",reply_markup=reply_markup)
+        if len(data) > 2:
+            result_id = data[3]
+            quiz.update_result(result_id, {
+                "current_question_number":0,
+                "current_question_result":0
+                })
+
+        quiz_list = quiz.get_quiz()
+        buttons = []
+        for q in quiz_list:
+            quiz_id = q.get('id')
+            title = q.get('title')
+            callback_data = f"topics_{title}_{quiz_id}"
+            button = InlineKeyboardButton(
+                text=title,
+                callback_data=callback_data
+            )
+            buttons.append([button])
+        reply_markup = InlineKeyboardMarkup(buttons)
+        query.answer("Kuting!")
+        query.edit_message_text("Test yechish uchun modulni tanlang!",reply_markup=reply_markup)
     
+    else:
+        # Send message to user
+        text =f'Siz guruhimizga a\'zo bo\'madingiz, qaytadan urunib ko\'ring!\n👉 {chat}'
+        query.edit_message_text(text)
+
 def get_topics(update:Update, context:CallbackContext) -> None:
     #Get user id
     user_id = update.callback_query.from_user.id
@@ -290,5 +302,4 @@ def statistics(update:Update, context:CallbackContext):
         "current_question_number":0,
         "current_question_result":0
         })
-
 

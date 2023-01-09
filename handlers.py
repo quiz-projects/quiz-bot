@@ -38,16 +38,16 @@ def start(update:Update, context:CallbackContext) -> None:
     data = bot.get_chat_member(chat, user_id)
     status = data["status"]
 
-    if status == "creator" or status == "member":
-        #Create user data
-        user_data = {
-            'first_name': user.first_name, 
-            'last_name': user.last_name, 
-            'telegram_id': user.id, 
-            'username': user.username, 
-            "question_list":[]}
-        quiz.add_student(user_data)
+    #Create user data
+    user_data = {
+        'first_name': user.first_name, 
+        'last_name': user.last_name, 
+        'telegram_id': user.id, 
+        'username': user.username, 
+        "question_list":[]}
+    quiz.add_student(user_data)
 
+    if status == "creator" or status == "member":
         button = InlineKeyboardButton(
             text = "Testni boshlash!", 
             callback_data='start_quiz'
@@ -57,15 +57,40 @@ def start(update:Update, context:CallbackContext) -> None:
         text ='codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi tugmani bosing!'
         update.message.reply_text(f'{text}',reply_markup=reply_markup)
     else:
-        cation =f'codeschoolQuizbot ga xush kelibsiz!\n\nBotdan foydalanish uchun quyidagi kanalga a\'zo bo\'lishingiz kerak!'
+        cation =f'codeschoolQuizbot ga xush kelibsiz!\n\nBotdan foydalanish uchun quyidagi guruhga a\'zo bo\'lishingiz kerak!\n👉 {chat}'
         
         button = InlineKeyboardButton(
-            text="a'zo bo'lish",
-            url='t.me/codeschoolQuiz'
+            text="tekshirish",
+            callback_data='chack_member'
             )
         reply_markup = InlineKeyboardMarkup([[button]])
         update.message.reply_text(cation,reply_markup=reply_markup)
 
+def begin_quiz(update:Update, context:CallbackContext)->None:
+    user_id = update.callback_query.from_user.id
+    #Get callback data
+    query = update.callback_query
+    bot = context.bot
+
+    chat = "@codeschoolQuiz"
+    data = bot.get_chat_member(chat, user_id)
+    status = data["status"]
+
+    if status == "member":
+        button = InlineKeyboardButton(
+            text = "Testni boshlash!", 
+            callback_data='start_quiz'
+            )
+        reply_markup = InlineKeyboardMarkup([[button]])
+        # Send message to user
+        query.answer('Weiting!')
+        text ='Siz guruhimizga a\'zo bo\'dingiz!\nTestlarni boshlash uchun quyidagi tugmani bosing!'
+        query.edit_message_text(f'{text}',reply_markup=reply_markup)
+
+    else:
+        # Send message to user
+        text =f'Siz guruhimizga a\'zo bo\'madingiz, qaytadan urunib ko\'ring!\n👉 {chat}'
+        query.edit_message_text(text)
 
 def choose_quiz(update:Update, context:CallbackContext) -> None:
     #Get user id

@@ -31,25 +31,36 @@ quiz = QuizDB(url)
 #Start handler
 def start(update:Update, context:CallbackContext) -> None:
     #Add user to database
+    bot = context.bot
     user = update.message.from_user
-    user_id = update.message.from_user.id
-    #Create user data
-    user_data = {
-        'first_name': user.first_name, 
-        'last_name': user.last_name, 
-        'telegram_id': user.id, 
-        'username': user.username, 
-        "question_list":[]}
-    quiz.add_student(user_data)
+    user_id = update.message.chat.id
+    chat = "@FullStackDevelopmen1"
+    data = bot.get_chat_member(chat, user_id)
+    status = data["status"]
+    
+    print(status)
+    if status == "creator" or status == "member":
+        #Create user data
+        user_data = {
+            'first_name': user.first_name, 
+            'last_name': user.last_name, 
+            'telegram_id': user.id, 
+            'username': user.username, 
+            "question_list":[]}
+        quiz.add_student(user_data)
 
-    button = InlineKeyboardButton(
-        text = "Testni boshlash!", 
-        callback_data='start_quiz'
-        )
-    reply_markup = InlineKeyboardMarkup([[button]])
-    # Send message to user
-    text ='codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi tugmani bosing!'
-    update.message.reply_text(f'{text}',reply_markup=reply_markup)
+        button = InlineKeyboardButton(
+            text = "Testni boshlash!", 
+            callback_data='start_quiz'
+            )
+        reply_markup = InlineKeyboardMarkup([[button]])
+        # Send message to user
+        text ='codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi tugmani bosing!'
+        update.message.reply_text(f'{text}',reply_markup=reply_markup)
+    else:
+        text =f'codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi kanalga azobo\'lishingiz kerak {chat}'
+        update.message.reply_text(text,reply_markup=None)
+
 
 def choose_quiz(update:Update, context:CallbackContext) -> None:
     #Get user id

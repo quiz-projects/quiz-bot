@@ -16,7 +16,8 @@ from handlers import (
     question,
     border,
     add_option,
-    statistics
+    statistics,
+    begin_quiz
 )
 import os
 import telegram
@@ -43,6 +44,7 @@ def main(request):
         dp.add_handler(CallbackQueryHandler(add_option, pattern='option'))
         dp.add_handler(CallbackQueryHandler(statistics, pattern='yes'))
         dp.add_handler(CallbackQueryHandler(choose_quiz, pattern='no'))
+        dp.add_handler(CallbackQueryHandler(begin_quiz, pattern='chack_member'))
 
         dp.process_update(update) 
         return {'ok':TOKEN}

@@ -28,13 +28,13 @@ import requests
 #Create database object
 url = 'https://englishapi.pythonanywhere.com'
 quiz = QuizDB(url)
+chat = "@codeschoolQuiz"
 #Start handler
 def start(update:Update, context:CallbackContext) -> None:
     #Add user to database
     bot = context.bot
     user = update.message.from_user
     user_id = update.message.chat.id
-    chat = "@codeschoolQuiz"
     data = bot.get_chat_member(chat, user_id)
     status = data["status"]
 
@@ -57,11 +57,11 @@ def start(update:Update, context:CallbackContext) -> None:
         text ='codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi tugmani bosing!'
         update.message.reply_text(f'{text}',reply_markup=reply_markup)
     else:
-        cation =f'codeschoolQuizbot ga xush kelibsiz!\n\nBotdan foydalanish uchun quyidagi guruhga a\'zo bo\'lishingiz kerak!\n👉 {chat}'
+        cation =f'codeschoolQuizbot ga xush kelibsiz!\n\nBotdan foydalanish uchun quyidagi guruhga a\'zo bo\'lishingiz kerak! \n👉 {chat}'
         
         button = InlineKeyboardButton(
             text="tekshirish",
-            callback_data='chack_member'
+            callback_data='chack_member1'
             )
         reply_markup = InlineKeyboardMarkup([[button]])
         update.message.reply_text(cation,reply_markup=reply_markup)
@@ -72,7 +72,7 @@ def begin_quiz(update:Update, context:CallbackContext)->None:
     query = update.callback_query
     bot = context.bot
 
-    chat = "@codeschoolQuiz"
+    query_data = query.data
     data = bot.get_chat_member(chat, user_id)
     status = data["status"]
 
@@ -84,44 +84,77 @@ def begin_quiz(update:Update, context:CallbackContext)->None:
         reply_markup = InlineKeyboardMarkup([[button]])
         # Send message to user
         query.answer('Weiting!')
-        text ='Siz guruhimizga a\'zo bo\'dingiz!\nTestlarni boshlash uchun quyidagi tugmani bosing!'
+        text ='✅ Siz guruhimizga a\'zo bo\'dingiz!\nTestlarni boshlash uchun quyidagi tugmani bosing!'
         query.edit_message_text(f'{text}',reply_markup=reply_markup)
 
     else:
         # Send message to user
-        text =f'Siz guruhimizga a\'zo bo\'madingiz, qaytadan urunib ko\'ring!\n👉 {chat}'
-        query.edit_message_text(text)
+        
+        cation1 =f'Siz guruhimizga a\'zo bo\'madingiz, qaytadan urunib ko\'ring!\n👉 {chat}'
+        cation2 =f'Guruh username {chat} orqali guruhga a\'zo bo\'ling!'
+
+        if query_data == 'chack_member1':
+            button = InlineKeyboardButton(
+                text="Tekshirish",
+                callback_data='chack_member2'
+                )
+            reply_markup = InlineKeyboardMarkup([[button]])
+
+            query.edit_message_text(cation1,reply_markup=reply_markup)
+        else:
+            button = InlineKeyboardButton(
+                text=" Qayta tekshirish",
+                callback_data='chack_member1'
+                )
+            reply_markup = InlineKeyboardMarkup([[button]])
+
+            query.edit_message_text(cation2,reply_markup=reply_markup)
 
 def choose_quiz(update:Update, context:CallbackContext) -> None:
     #Get user id
     user_id = update.callback_query.from_user.id
-    #Get callback data
+    bot = context.bot
+    data = bot.get_chat_member(chat, user_id)
+    status = data["status"]
     query = update.callback_query
-    # Get all quiz
-    data = query.data.split("_")
 
-    if len(data) > 2:
-        result_id = data[3]
-        quiz.update_result(result_id, {
-            "current_question_number":0,
-            "current_question_result":0
-            })
+    #Get callback data
+    if status == "creator" or status == "member":
+        
+        # Get all quiz
+        data = query.data.split("_")
 
-    quiz_list = quiz.get_quiz()
-    buttons = []
-    for q in quiz_list:
-        quiz_id = q.get('id')
-        title = q.get('title')
-        callback_data = f"topics_{title}_{quiz_id}"
+        if len(data) > 2:
+            result_id = data[3]
+            quiz.update_result(result_id, {
+                "current_question_number":0,
+                "current_question_result":0
+                })
+
+        quiz_list = quiz.get_quiz()
+        buttons = []
+        for q in quiz_list:
+            quiz_id = q.get('id')
+            title = q.get('title')
+            callback_data = f"topics_{title}_{quiz_id}"
+            button = InlineKeyboardButton(
+                text=title,
+                callback_data=callback_data
+            )
+            buttons.append([button])
+        reply_markup = InlineKeyboardMarkup(buttons)
+        query.answer("Kuting!")
+        query.edit_message_text("Test yechish uchun modulni tanlang!",reply_markup=reply_markup)
+    else:
+        caption=f'Siz guruhimizdan chiqib ketgansiz, Testni davom ettirish uchun guruhga qo\'shiling!\n👉{chat}'
         button = InlineKeyboardButton(
-            text=title,
-            callback_data=callback_data
-        )
-        buttons.append([button])
-    reply_markup = InlineKeyboardMarkup(buttons)
-    query.answer("Kuting!")
-    query.edit_message_text("Test yechish uchun modulni tanlang!",reply_markup=reply_markup)
-    
+            text="Tekshirish",
+            callback_data='chack_member1'
+            )
+        reply_markup = InlineKeyboardMarkup([[button]])
+
+        query.edit_message_text(caption,reply_markup=reply_markup)
+
 def get_topics(update:Update, context:CallbackContext) -> None:
     #Get user id
     user_id = update.callback_query.from_user.id
@@ -284,8 +317,13 @@ def statistics(update:Update, context:CallbackContext):
     now_answer = student_result["student"]["results"][0]["current_question_result"]
     current_question = student_result["student"]["results"][0]["current_question_number"]
 
-    text = f"Umumiy savollar soni: {current_question}\nTo'g'ri javoblar soni: {now_answer}\nMavzu bo'yicha umimiy to'g'ri javoblar soni: " + str(student_result['student']["results"][0]["score"])
-    query.edit_message_text(text, reply_markup=None)
+    text = f"Umumiy savollar soni: {current_question}\nTo'g'ri javoblar soni: {now_answer}"
+    
+    button = InlineKeyboardButton(
+        "Testni qayta ishlash", callback_data=f'start_quiz')
+    reply_markup = InlineKeyboardMarkup([[button]])
+    
+    query.edit_message_text(text, reply_markup=reply_markup)
     quiz.update_result(result_id, {
         "current_question_number":0,
         "current_question_result":0

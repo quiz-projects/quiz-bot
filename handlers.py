@@ -103,7 +103,7 @@ def begin_quiz(update:Update, context:CallbackContext)->None:
             query.edit_message_text(cation1,reply_markup=reply_markup)
         else:
             button = InlineKeyboardButton(
-                text=" Qayra tekshirish",
+                text=" Qayta tekshirish",
                 callback_data='chack_member1'
                 )
             reply_markup = InlineKeyboardMarkup([[button]])

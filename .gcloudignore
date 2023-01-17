@@ -3,3 +3,4 @@ set_token.sh
 .git
 .github
 test.py
+accountKey.json

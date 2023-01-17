@@ -35,6 +35,7 @@ def main() -> None:
     dp.add_handler(CallbackQueryHandler(border, pattern='border'))
     dp.add_handler(CallbackQueryHandler(question, pattern='questions'))
     dp.add_handler(CallbackQueryHandler(next_question, pattern='nextquestion'))
+    dp.add_handler(CallbackQueryHandler(begin_quiz, pattern='chack_member'))
 
     # Start the Bot
     updater.start_polling()

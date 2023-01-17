@@ -164,7 +164,7 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     for t in quiz_data['quiz']['topic']:
         topic_id = t.get('id')
         title = t.get('title')
-        callback_data = f"border_{topic_id}"
+        callback_data = f"border_{topic_id}_{quiz_id}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
@@ -177,14 +177,15 @@ def get_topics(update:Update, context:CallbackContext) -> None:
 def border(update:Update, context:CallbackContext):
         quer = update.callback_query
         data =quer.data.split('_')
-        topic_id = data[-1]
+        topic_id = data[-2]
+        quiz_id = data[-1]
         reply_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton('5', callback_data=f'questions_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{topic_id}_10')],
-            [InlineKeyboardButton('15', callback_data=f'questions_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{topic_id}_20')]])
+            [InlineKeyboardButton('5', callback_data=f'questions_{quiz_id}_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{quiz_id}_{topic_id}_10')],
+            [InlineKeyboardButton('15', callback_data=f'questions_{quiz_id}_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{quiz_id}_{topic_id}_20')]])
         quer.edit_message_text("Nechta test yechishni hohlaysiz?", reply_markup=reply_markup)
 
 
-def keyboard(options, result_id, question_id):
+def keyboard(options, result_id, question_id, quiz_id):
 
     buttons = []
     for option in options:
@@ -193,7 +194,7 @@ def keyboard(options, result_id, question_id):
         option_id = option['id']
         button = InlineKeyboardButton(
             title, 
-            callback_data=f'nextquestion_{title}_{is_correct}_{option_id}_{result_id}_{question_id}')
+            callback_data=f'nextquestion_{quiz_id}_{title}_{is_correct}_{option_id}_{result_id}_{question_id}')
         buttons.append(button)
 
     return buttons
@@ -206,6 +207,7 @@ def question(update:Update, context:CallbackContext) -> None:
     data = query.data.split('_')
     question_numpber = int(data[-1])
     topic_id = int(data[-2])
+    quiz_id = int(data[-3])
 
     question = quiz.get_question(topic_id,telegram_id,question_numpber)
 
@@ -220,7 +222,7 @@ def question(update:Update, context:CallbackContext) -> None:
     image = question['img']
     title = question['title']
 
-    reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id)])
+    reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id, quiz_id)])
 
     firestore_db.update_question(telegram_id, {'questions':questions})
     query.edit_message_text("Savollarni yechishni boshlang!")
@@ -235,7 +237,7 @@ def next_question(update:Update, context:CallbackContext) -> None:
 
     data = query.data.split('_')
 
-    text_handler,title, is_correct, option_id, result_id, question_id = data
+    text_handler,quiz_id,title, is_correct, option_id, result_id, question_id = data
 
     result = {
         "result":result_id, 
@@ -257,7 +259,7 @@ def next_question(update:Update, context:CallbackContext) -> None:
         options = question['option']
         image = question['img']
         title = question['title']
-        reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id)])
+        reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id, quiz_id)])
 
         if is_correct == 'True':
             query.edit_message_caption("To'g'ri javob berdingiz ✅")
@@ -278,6 +280,8 @@ def next_question(update:Update, context:CallbackContext) -> None:
 
         quiz.add_result_detail(results)
         firestore_db.delete_result(telegram_id)
-
+        button1 = button = InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")
+        button2 = button = InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")
+        reply_markup = InlineKeyboardMarkup([[button1, button2]])
         text = f"Umumiy savollar soni: {len(results)}\nTo'g'ri javoblar soni: {correct}"
-        bot.sendMessage(telegram_id,text)
+        bot.sendMessage(telegram_id,text, reply_markup=reply_markup)

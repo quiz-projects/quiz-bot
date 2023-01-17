@@ -7,7 +7,7 @@ print(TOKEN)
 #Define main function
 def main():
  
-    WEBHOOK_URL = 'https://quizbot-wphitu67ya-uc.a.run.app'
+    WEBHOOK_URL = 'https://quizbot-wphitu67ya-uc.a.run.app/'
     #Create an instance of the telegram.Bot class
     bot = telegram.Bot(token=TOKEN)
     # #Delete webhook

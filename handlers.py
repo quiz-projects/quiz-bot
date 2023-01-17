@@ -21,11 +21,13 @@ from telegram.ext import (
     CallbackContext,
     Dispatcher
 )
+from db_api import firestoreDB
 from quizapi import QuizDB
 from random import randint
 from pprint import pprint
 import requests
 #Create database object
+firestore_db = firestoreDB()
 url = 'https://englishapi.pythonanywhere.com'
 quiz = QuizDB(url)
 chat = "@codeschoolQuiz"
@@ -37,14 +39,13 @@ def start(update:Update, context:CallbackContext) -> None:
     user_id = update.message.chat.id
     data = bot.get_chat_member(chat, user_id)
     status = data["status"]
-
+    print("HELLO", flush=True)
     #Create user data
     user_data = {
         'first_name': user.first_name, 
         'last_name': user.last_name, 
         'telegram_id': user.id, 
-        'username': user.username, 
-        "question_list":[]}
+        'username': user.username}
     quiz.add_student(user_data)
 
     if status == "creator" or status == "member":
@@ -67,6 +68,10 @@ def start(update:Update, context:CallbackContext) -> None:
         update.message.reply_text(cation,reply_markup=reply_markup)
 
 def begin_quiz(update:Update, context:CallbackContext)->None:
+
+    """
+    Request permission to start quiz
+    """
     user_id = update.callback_query.from_user.id
     #Get callback data
     query = update.callback_query
@@ -120,23 +125,13 @@ def choose_quiz(update:Update, context:CallbackContext) -> None:
 
     #Get callback data
     if status == "creator" or status == "member":
-        
-        # Get all quiz
-        data = query.data.split("_")
-
-        if len(data) > 2:
-            result_id = data[3]
-            quiz.update_result(result_id, {
-                "current_question_number":0,
-                "current_question_result":0
-                })
-
+    
         quiz_list = quiz.get_quiz()
         buttons = []
         for q in quiz_list:
             quiz_id = q.get('id')
             title = q.get('title')
-            callback_data = f"topics_{title}_{quiz_id}"
+            callback_data = f"topics_{quiz_id}"
             button = InlineKeyboardButton(
                 text=title,
                 callback_data=callback_data
@@ -169,7 +164,7 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     for t in quiz_data['quiz']['topic']:
         topic_id = t.get('id')
         title = t.get('title')
-        callback_data = f"border_{title}_{topic_id}_{quiz_id}"
+        callback_data = f"border_{topic_id}_{quiz_id}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
@@ -183,150 +178,110 @@ def border(update:Update, context:CallbackContext):
         quer = update.callback_query
         data =quer.data.split('_')
         topic_id = data[-2]
+        quiz_id = data[-1]
         reply_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton('5', callback_data=f'questions_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{topic_id}_10')],
-            [InlineKeyboardButton('15', callback_data=f'questions_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{topic_id}_20')]])
+            [InlineKeyboardButton('5', callback_data=f'questions_{quiz_id}_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{quiz_id}_{topic_id}_10')],
+            [InlineKeyboardButton('15', callback_data=f'questions_{quiz_id}_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{quiz_id}_{topic_id}_20')]])
         quer.edit_message_text("Nechta test yechishni hohlaysiz?", reply_markup=reply_markup)
 
+
+def keyboard(options, result_id, question_id, quiz_id):
+
+    buttons = []
+    for option in options:
+        title = option['title']
+        is_correct = option['is_correct']
+        option_id = option['id']
+        button = InlineKeyboardButton(
+            title, 
+            callback_data=f'nextquestion_{quiz_id}_{title}_{is_correct}_{option_id}_{result_id}_{question_id}')
+        buttons.append(button)
+
+    return buttons
+
 def question(update:Update, context:CallbackContext) -> None:
-    #Get user id
-    telegram_id = update.callback_query.from_user.id
-    bot = context.bot
-    #Get callback data
     query = update.callback_query
+    #Get user id
+    telegram_id = query.from_user.id
+    bot = context.bot
     data = query.data.split('_')
-    numpber_of_question = int(data[-1])
-    quiz.current_question = numpber_of_question
+    question_numpber = int(data[-1])
     topic_id = int(data[-2])
+    quiz_id = int(data[-3])
+
+    question = quiz.get_question(topic_id,telegram_id,question_numpber)
+
+    questions = question['quiz']['topic']['question']
+    result_id = question['quiz']['result']
+    question = questions.pop()
+    firestore_db.set_question(telegram_id, data={'questions':questions})
+    firestore_db.add_result(telegram_id,[])
     
-    random_list = []
-    user_id = quiz.get_student(telegram_id)['id']
-    
-    data = {"student": user_id, "topic": topic_id, "score": 0}
-    result_data = quiz.add_result(data)
-    result_id = result_data['id']
-    question = quiz.get_question(topic_id)
+    question_id = question['id']
+    options = question['option']
+    image = question['img']
+    title = question['title']
 
-    quiz.update_result(result_id, {"current_question_number":numpber_of_question})
+    reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id, quiz_id)])
 
-    questions = question['quiz']['topic']["question"]
-    idx = list(range(len(questions)))
-    for i in range(numpber_of_question):
-        
-        random_list.append(randint(idx[0],idx[-1]))
+    firestore_db.update_question(telegram_id, {'questions':questions})
+    query.edit_message_text("Savollarni yechishni boshlang!")
+    bot.sendPhoto(chat_id=telegram_id ,photo=image, caption=title, reply_markup = reply_markup)
 
-    question_list = quiz.update_student(random_list, user_id)
-    
-    if len(question_list) > 0:
-        img = question['quiz']['topic']['question'][random_list[0]]["img"]
 
-        keyboard = [[]]
-        for option in question['quiz']['topic']['question'][random_list[0]]["option"]:
-                question_id = option["question"]
-                option_id = option['id']
-                button = InlineKeyboardButton(
-                    option["title"], 
-                    callback_data=f"option_{question_id}_{option_id}_{result_id}_{topic_id}")
-                keyboard[0].append(button)
-                
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        text = question['quiz']['topic']['question'][question_list[0]]["title"]
-        query.edit_message_text("Savollarni yechishni boshlang!")
-        bot.sendPhoto(telegram_id ,img, text, reply_markup = reply_markup)
-
-        if len(question_list) > 0:
-            question_list.pop(0)
-            quiz.update_student(question_list, user_id)
-    else:
-        b1 = InlineKeyboardButton('Yes', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
-        b2 = InlineKeyboardButton("No", callback_data=f'no_{topic_id}_{user_id}_{result_id}')
-        reply_markup = InlineKeyboardMarkup([[b1, b2]])
-        bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz.\n✅Natijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
-
-def next_question(update:Update, context:CallbackContext, topic_id:int, result_id:int, chat_id:int) -> None:
-    telegram_id = update.callback_query.from_user.id
+def next_question(update:Update, context:CallbackContext) -> None:
+    query = update.callback_query
+    #Get user id
+    telegram_id = query.from_user.id
     bot = context.bot
 
-    user_data = quiz.get_student(chat_id)
-    user_id = user_data['id']
-    questions = user_data["question_list"]
-    question = quiz.get_question(topic_id)
-    if len(questions) > 0:
-        img = question['quiz']['topic']['question'][questions[0]]["img"]
+    data = query.data.split('_')
 
-        keyboard = [[]]
-        for option in question['quiz']['topic']['question'][questions[0]]["option"]:
-                question_id = option["question"]
-                option_id = option['id']
-                button = InlineKeyboardButton(
-                    option["title"], 
-                    callback_data=f"option_{question_id}_{option_id}_{result_id}_{topic_id}")
-                keyboard[0].append(button)
-                
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        text = question['quiz']['topic']['question'][questions[0]]["title"]
-        bot.sendPhoto(chat_id ,img, text, reply_markup = reply_markup)
+    text_handler,quiz_id,title, is_correct, option_id, result_id, question_id = data
 
-        if len(questions) > 0:
-            questions.pop(0)
-            quiz.update_student(questions, user_data['id'])
-        
-    else:
-        b1 = InlineKeyboardButton('Ha', callback_data=f'yes_{topic_id}_{user_id}_{result_id}')
-        b2 = InlineKeyboardButton("Yoq", callback_data=f'no_{topic_id}_{user_id}_{result_id}')
-        reply_markup = InlineKeyboardMarkup([[b1, b2]])
-        bot.sendMessage(telegram_id,'Bu mavzuni muvaffaqiyatli tugatdingiz✅\nNatijarni ko\'rishni hohlaysizmi?',reply_markup=reply_markup)
-
-def add_option(update:Update, context:CallbackContext) -> None:
-    query = update.callback_query 
-    data = query.data.split('_')  
-    question_id = int(data[1])
-    option_id = int(data[2])
-    result_id = int(data[3])
-    topic_id = int(data[4])
-    student_id = int(quiz.get_student(query.message.chat.id)['id'])
-    data_json = {
+    result = {
         "result":result_id, 
         "question":question_id, 
-        "option":option_id
+        "option":option_id,
+        "is_correct":is_correct == "True"
     }
-    result_data = quiz.add_result_detail(data_json)
 
-    result_option = quiz.result_detail(option_id)
+    results:list = firestore_db.get_result(telegram_id)['data']
+    results.append(result)
+    firestore_db.add_result(telegram_id, results)
 
-    if result_option["is_correct"] == False:
-        query.answer("Noto'g'ri javob berdingiz ❌")
-        query.edit_message_caption('Noto\'g\'ri javob berdingiz ❌', reply_markup=None)
+    questions = firestore_db.get_question(telegram_id)['questions']
+    if len(questions) > 0:
+        question = questions.pop()
+        firestore_db.update_question(telegram_id, {'questions':questions})
 
-    if result_option["is_correct"] == True:
-        get_result_data = quiz.get_result(student_id, topic_id)
-        current_question_result = int(get_result_data['student']["results"][0]["current_question_result"]) + 1
-        quiz.update_result(result_id, {"current_question_result":current_question_result})
-        query.answer("To'g'ri javob berdingiz ✅")
-        query.edit_message_caption('To\'g\'ri javob berdingiz ✅', reply_markup=None)
-    next_question(update, context, topic_id, result_id, query.message.chat.id)
+        question_id = question['id']
+        options = question['option']
+        image = question['img']
+        title = question['title']
+        reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id, quiz_id)])
 
-def statistics(update:Update, context:CallbackContext):
-    query = update.callback_query
-    data = query.data.split('_')
-    student_id = data[-2]
-    topic_id = data[-3]
-    result_id = data[-1]
-    student_result = quiz.get_result(student_id, topic_id)
+        if is_correct == 'True':
+            query.edit_message_caption("To'g'ri javob berdingiz ✅")
+        else:
+            query.edit_message_caption("Noto'g'ri javob berdingiz ❌")
+        bot.sendPhoto(chat_id=telegram_id ,photo=image, caption=title, reply_markup = reply_markup)
 
-    now_answer = student_result["student"]["results"][0]["current_question_result"]
-    current_question = student_result["student"]["results"][0]["current_question_number"]
+    else:
+        if is_correct == 'True':
+            query.edit_message_caption("To'g'ri javob berdingiz ✅")
+        else:
+            query.edit_message_caption("Noto'g'ri javob berdingiz ❌")
 
-    text = f"Umumiy savollar soni: {current_question}\nTo'g'ri javoblar soni: {now_answer}"
-    
-    button = InlineKeyboardButton(
-        "Testni qayta ishlash", callback_data=f'start_quiz')
-    reply_markup = InlineKeyboardMarkup([[button]])
-    
-    query.edit_message_text(text, reply_markup=reply_markup)
-    quiz.update_result(result_id, {
-        "current_question_number":0,
-        "current_question_result":0
-        })
+        results:list = firestore_db.get_result(telegram_id)['data']
+        correct = 0
+        for result in results:
+            correct += result['is_correct']
 
-
+        quiz.add_result_detail(results)
+        firestore_db.delete_result(telegram_id)
+        button1 = button = InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")
+        button2 = button = InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")
+        reply_markup = InlineKeyboardMarkup([[button1, button2]])
+        text = f"Umumiy savollar soni: {len(results)}\nTo'g'ri javoblar soni: {correct}"
+        bot.sendMessage(telegram_id,text, reply_markup=reply_markup)

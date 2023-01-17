@@ -38,8 +38,8 @@ def start(update:Update, context:CallbackContext) -> None:
     user = update.message.from_user
     user_id = update.message.chat.id
     data = bot.get_chat_member(chat, user_id)
+
     status = data["status"]
-    print("HELLO", flush=True)
     #Create user data
     user_data = {
         'first_name': user.first_name, 
@@ -95,8 +95,8 @@ def begin_quiz(update:Update, context:CallbackContext)->None:
     else:
         # Send message to user
         
-        cation1 =f'Siz guruhimizga a\'zo bo\'madingiz, qaytadan urunib ko\'ring!\n👉 {chat}'
-        cation2 =f'Guruh username {chat} orqali guruhga a\'zo bo\'ling!'
+        caption1 =f'Siz guruhimizga a\'zo bo\'madingiz, qaytadan urunib ko\'ring!\n👉 {chat}'
+        caption2 =f'Guruh username {chat} orqali guruhga a\'zo bo\'ling!'
 
         if query_data == 'chack_member1':
             button = InlineKeyboardButton(
@@ -105,7 +105,7 @@ def begin_quiz(update:Update, context:CallbackContext)->None:
                 )
             reply_markup = InlineKeyboardMarkup([[button]])
 
-            query.edit_message_text(cation1,reply_markup=reply_markup)
+            query.edit_message_text(caption1,reply_markup=reply_markup)
         else:
             button = InlineKeyboardButton(
                 text=" Qayta tekshirish",
@@ -113,7 +113,7 @@ def begin_quiz(update:Update, context:CallbackContext)->None:
                 )
             reply_markup = InlineKeyboardMarkup([[button]])
 
-            query.edit_message_text(cation2,reply_markup=reply_markup)
+            query.edit_message_text(caption2,reply_markup=reply_markup)
 
 def choose_quiz(update:Update, context:CallbackContext) -> None:
     #Get user id
@@ -228,7 +228,12 @@ def question(update:Update, context:CallbackContext) -> None:
     query.edit_message_text("Savollarni yechishni boshlang!")
     bot.sendPhoto(chat_id=telegram_id ,photo=image, caption=title, reply_markup = reply_markup)
 
-
+def isCorrect(query, is_correct):
+    if is_correct == 'True':
+        query.edit_message_caption("To'g'ri javob berdingiz ✅")
+    else:
+        query.edit_message_caption("Noto'g'ri javob berdingiz ❌")
+    
 def next_question(update:Update, context:CallbackContext) -> None:
     query = update.callback_query
     #Get user id
@@ -261,17 +266,11 @@ def next_question(update:Update, context:CallbackContext) -> None:
         title = question['title']
         reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id, quiz_id)])
 
-        if is_correct == 'True':
-            query.edit_message_caption("To'g'ri javob berdingiz ✅")
-        else:
-            query.edit_message_caption("Noto'g'ri javob berdingiz ❌")
+        isCorrect(query, is_correct)
         bot.sendPhoto(chat_id=telegram_id ,photo=image, caption=title, reply_markup = reply_markup)
 
     else:
-        if is_correct == 'True':
-            query.edit_message_caption("To'g'ri javob berdingiz ✅")
-        else:
-            query.edit_message_caption("Noto'g'ri javob berdingiz ❌")
+        isCorrect(query, is_correct)
 
         results:list = firestore_db.get_result(telegram_id)['data']
         correct = 0
@@ -280,8 +279,8 @@ def next_question(update:Update, context:CallbackContext) -> None:
 
         quiz.add_result_detail(results)
         firestore_db.delete_result(telegram_id)
-        button1 = button = InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")
-        button2 = button = InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")
+        button1  = InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")
+        button2  = InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")
         reply_markup = InlineKeyboardMarkup([[button1, button2]])
         text = f"Umumiy savollar soni: {len(results)}\nTo'g'ri javoblar soni: {correct}"
         bot.sendMessage(telegram_id,text, reply_markup=reply_markup)

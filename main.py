@@ -46,5 +46,5 @@ def main(request):
 
         dp.process_update(update) 
         return {'ok':TOKEN}
-   
-   return f'TOKEN: {TOKEN}!'
+
+   return f'TOKEN: {TOKEN}'

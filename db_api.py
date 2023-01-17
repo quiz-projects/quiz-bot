@@ -3,7 +3,7 @@ from firebase_admin import credentials, firestore
 
 class firestoreDB:
     def __init__(self):
-        cred = credentials.Certificate("accountKey.json")
+        cred = credentials.Certificate('accountKey.json')
         firebase_admin.initialize_app(cred)
         self.db = firestore.client()
     

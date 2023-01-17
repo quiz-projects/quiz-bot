@@ -39,7 +39,7 @@ def start(update:Update, context:CallbackContext) -> None:
     user_id = update.message.chat.id
     data = bot.get_chat_member(chat, user_id)
     status = data["status"]
-
+    print("HELLO", flush=True)
     #Create user data
     user_data = {
         'first_name': user.first_name, 

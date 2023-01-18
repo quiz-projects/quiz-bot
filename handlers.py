@@ -277,10 +277,10 @@ def next_question(update:Update, context:CallbackContext) -> None:
         for result in results:
             correct += result['is_correct']
 
-        quiz.add_result_detail(results)
-        firestore_db.delete_result(telegram_id)
         button1  = InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")
         button2  = InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")
         reply_markup = InlineKeyboardMarkup([[button1, button2]])
         text = f"Umumiy savollar soni: {len(results)}\nTo'g'ri javoblar soni: {correct}"
         bot.sendMessage(telegram_id,text, reply_markup=reply_markup)
+        quiz.add_result_detail(results)
+        firestore_db.delete_result(telegram_id)

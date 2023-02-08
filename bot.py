@@ -13,9 +13,8 @@ from handlers import (
     choose_quiz,
     get_topics,
     question,
+    next_question,
     border,
-    add_option,
-    statistics,
     begin_quiz
 )
 import os
@@ -35,9 +34,7 @@ def main() -> None:
     dp.add_handler(CallbackQueryHandler(get_topics, pattern='topics'))
     dp.add_handler(CallbackQueryHandler(border, pattern='border'))
     dp.add_handler(CallbackQueryHandler(question, pattern='questions'))
-    dp.add_handler(CallbackQueryHandler(add_option, pattern='option'))
-    dp.add_handler(CallbackQueryHandler(statistics, pattern='yes'))
-    dp.add_handler(CallbackQueryHandler(choose_quiz, pattern='no'))
+    dp.add_handler(CallbackQueryHandler(next_question, pattern='nextquestion'))
     dp.add_handler(CallbackQueryHandler(begin_quiz, pattern='chack_member'))
 
     # Start the Bot

@@ -175,7 +175,8 @@ def get_topics(update:Update, context:CallbackContext) -> None:
         topic_id = t.get('id')
         title = t.get('title')
         score = allsolved['allsolved'].get(title, 0)
-        if allsolved['allsolved'].get(title, 0) >=70:
+        
+        if allsolved['allsolved'].get(title, 0) >=70 or topic_id == min_topic_id:
             key = f"✅ {score}%"
             title = title + key
         else:
@@ -348,6 +349,7 @@ def next_question(update:Update, context:CallbackContext) -> None:
         button1  = InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")
         button2  = InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")
         reply_markup = InlineKeyboardMarkup([[button1, button2]])
+        quiz.add_result_detail(results)
         topic_persentage = quiz.get_percentage(telegram_id, topic_id)['solved']
         if topic_persentage >= 70:
             condition = "✅"
@@ -358,6 +360,6 @@ def next_question(update:Update, context:CallbackContext) -> None:
         # Send result
         bot.sendMessage(telegram_id,text, reply_markup=reply_markup)
         # Add result detail to database
-        quiz.add_result_detail(results)
+        # quiz.add_result_detail(results)
         # Delete result from temporary database 
         firestore_db.delete_result(telegram_id)

@@ -48,3 +48,13 @@ class QuizDB:
     def add_result_detail(self, data:list):
         url = f"{self.base_url}/api/result_detail/"
         requests.post(url, json=data)
+
+    def allPercentage(self, telegram_id, quiz_id):
+        url = f"{self.base_url}/api/get_all_percentage/{telegram_id}/{quiz_id}"
+        responce = requests.get(url)
+        return responce.json()
+    
+    def get_percentage(self, telegram_id, topic_id):
+        url = f"{self.base_url}/api/get_percentage/{telegram_id}/{topic_id}"
+        responce = requests.get(url)
+        return responce.json()

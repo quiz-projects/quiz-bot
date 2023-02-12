@@ -25,6 +25,7 @@ from db_api import firestoreDB
 from quizapi import QuizDB
 from random import randint
 from pprint import pprint
+import check_topics
 import requests
 #Create database object
 firestore_db = firestoreDB()
@@ -58,13 +59,13 @@ def start(update:Update, context:CallbackContext) -> None:
             )
         reply_markup = InlineKeyboardMarkup([[button]])
         # Send message to user
-        text ='codeschoolQuizbot ga xush kelibsiz!\n\nTestlarni boshlash uchun quyidagi tugmani bosing!'
+        text ="CODESCHOOL quiz botga xush kelibsiz!\n\nDasturlash bo'yicha bilimingizni biz bilan oshiring!"
         update.message.reply_text(f'{text}',reply_markup=reply_markup)
     else:
-        cation =f'codeschoolQuizbot ga xush kelibsiz!\n\nBotdan foydalanish uchun quyidagi guruhga a\'zo bo\'lishingiz kerak! \n👉 {chat}'
+        cation =f'CODESCHOOL quiz botga xush kelibsiz!\n\nBotdan foydalanish uchun quyidagi guruhga a\'zo bo\'lishingiz kerak! \n👉 {chat}'
         
         button = InlineKeyboardButton(
-            text="tekshirish",
+            text="Tekshirish",
             callback_data='chack_member1'
             )
         reply_markup = InlineKeyboardMarkup([[button]])
@@ -162,41 +163,61 @@ def get_topics(update:Update, context:CallbackContext) -> None:
     user_id = update.callback_query.from_user.id
     #Get callback data
     query = update.callback_query
+    telegram_id = query.from_user.id
     data = query.data
     quiz_id = int(data.split('_')[-1])
     quiz_data = quiz.get_topic(quiz_id)
-
+    allsolved = quiz.allPercentage(telegram_id, quiz_id)
     buttons = []
 
+    min_topic_id = check_topics.fist_topic_id(quiz_data)
     for t in quiz_data['quiz']['topic']:
         topic_id = t.get('id')
         title = t.get('title')
-        callback_data = f"border_{topic_id}_{quiz_id}"
+        score = allsolved['allsolved'].get(title, 0)
+        if allsolved['allsolved'].get(title, 0) >=70:
+            key = f"✅ {score}%"
+            title = title + key
+        else:
+            key = f"🔒 {score}%"
+            title = title + key
+
+        callback_data = f"border_{min_topic_id}_{topic_id}_{quiz_id}_{key}"
         button = InlineKeyboardButton(
             text=title,
             callback_data=callback_data
         )
         buttons.append([button])
+    buttons.append([InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")])
     reply_markup = InlineKeyboardMarkup(buttons)
     query.answer("Kuting!")
     query.edit_message_text("Test yechish uchun mavzu tanlang!",reply_markup=reply_markup)
+    firestore_db.set_all_percentage(telegram_id, allsolved)
 
 def border(update:Update, context:CallbackContext):
     """
     Choose number of questions from question list
     """
+
+    telegram_id = update.callback_query.from_user.id
     quer = update.callback_query
     # get callback data
     data =quer.data.split('_')
-    topic_id = data[-2]
-    quiz_id = data[-1]
-    reply_markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton('5', callback_data=f'questions_{quiz_id}_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{quiz_id}_{topic_id}_10')],
-        [InlineKeyboardButton('15', callback_data=f'questions_{quiz_id}_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{quiz_id}_{topic_id}_20')]])
-    quer.edit_message_text("Nechta test yechishni hohlaysiz?", reply_markup=reply_markup)
+    min_topic_id = data[-4]
+    topic_id = data[-3]
+    quiz_id = data[-2]
+    key = data[-1]
+    check_topic = check_topics.check_above_topics(quiz,telegram_id, topic_id, min_topic_id)
+    if check_topic:
+        reply_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton('5', callback_data=f'questions_{quiz_id}_{topic_id}_5'), InlineKeyboardButton('10', callback_data=f'questions_{quiz_id}_{topic_id}_10')],
+            [InlineKeyboardButton('15', callback_data=f'questions_{quiz_id}_{topic_id}_15'), InlineKeyboardButton('20', callback_data=f'questions_{quiz_id}_{topic_id}_20')],
+            [InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")]])
+        quer.edit_message_text("Nechta test yechishni hohlaysiz?", reply_markup=reply_markup)
+    else:
+        quer.answer("🔒 Bu mavzuni yechish uchun yuqoridagi mavzuda o'zlashtirish darajangiz 70%dan yuqori bo'lishi kerak!", show_alert=True)
 
-
-def keyboard(options, result_id, question_id, quiz_id):
+def keyboard(options, result_id, question_id, topic_id, quiz_id):
     """
     Create keyboard for question
 
@@ -215,7 +236,7 @@ def keyboard(options, result_id, question_id, quiz_id):
         option_id = option['id']
         button = InlineKeyboardButton(
             title, 
-            callback_data=f'nextquestion_{quiz_id}_{title}_{is_correct}_{option_id}_{result_id}_{question_id}')
+            callback_data=f'nextquestion_{quiz_id}_{topic_id}_{title}_{is_correct}_{option_id}_{result_id}_{question_id}')
         buttons.append(button)
 
     return buttons
@@ -249,7 +270,7 @@ def question(update:Update, context:CallbackContext) -> None:
     image = question['img']
     title = question['title']
 
-    reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id, quiz_id)])
+    reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id,topic_id, quiz_id)])
     # Update question to temporary database
     firestore_db.update_question(telegram_id, {'questions':questions})
     query.edit_message_text("Savollarni yechishni boshlang!")
@@ -282,7 +303,7 @@ def next_question(update:Update, context:CallbackContext) -> None:
 
     data = query.data.split('_')
 
-    text_handler,quiz_id,title, is_correct, option_id, result_id, question_id = data
+    text_handler, quiz_id, topic_id, title, is_correct, option_id, result_id, question_id = data
 
     result = {
         "result":result_id, 
@@ -308,7 +329,7 @@ def next_question(update:Update, context:CallbackContext) -> None:
         options = question['option']
         image = question['img']
         title = question['title']
-        reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id, quiz_id)])
+        reply_markup = InlineKeyboardMarkup([keyboard(options, result_id, question_id,topic_id, quiz_id)])
         # Send edit message caption
         isCorrect(query, is_correct)
         # Send next question
@@ -327,7 +348,13 @@ def next_question(update:Update, context:CallbackContext) -> None:
         button1  = InlineKeyboardButton("Modul tanlash", callback_data="start_quiz")
         button2  = InlineKeyboardButton("Mavzu tanlash", callback_data=f"topics_{quiz_id}")
         reply_markup = InlineKeyboardMarkup([[button1, button2]])
-        text = f"Umumiy savollar soni: {len(results)}\nTo'g'ri javoblar soni: {correct}"
+        topic_persentage = quiz.get_percentage(telegram_id, topic_id)['solved']
+        if topic_persentage >= 70:
+            condition = "✅"
+        else:
+            # lock emoji
+            condition = "🔒"
+        text = f"Umumiy savollar soni: {len(results)}\nTo'g'ri javoblar soni: {correct}\n\n{condition} Ushbu mavzuni o'zlashtirish darajangiz: {topic_persentage}%"
         # Send result
         bot.sendMessage(telegram_id,text, reply_markup=reply_markup)
         # Add result detail to database

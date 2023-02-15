@@ -10,6 +10,10 @@ class firestoreDB:
     def set_question(self, telegram_id, data):
         ref = self.db.collection(str(telegram_id)).document('question')
         ref.set(data)
+    
+    def set_all_percentage(self, telegram_id, data):
+        ref = self.db.collection(str(telegram_id)).document('allsolved')
+        ref.set(data)
 
     def get_question(self, telegram_id):
         ref = self.db.collection(str(telegram_id)).document('question')
